@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Box Breathing</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FFA500">
+    <style>
+        /* Basic Reset & Global Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent; /* Remove tap highlight */
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden; /* Prevent scrolling */
+            background-color: #000000;
+            color: #E0E0E0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            -webkit-user-select: none; /* Prevent text selection */
+            user-select: none;
+            touch-action: manipulation; /* Prevent zoom/pan gestures */
+        }
+
+        /* Page Containers */
+        .page {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+            padding: 20px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        #home {
+            opacity: 1;
+            z-index: 2;
+            justify-content: space-around; /* Space out elements */
+        }
+
+        #exercise {
+            opacity: 0;
+            z-index: 1;
+            pointer-events: none; /* Initially not interactive */
+        }
+
+        body.exercise-active #home {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        body.exercise-active #exercise {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 2;
+        }
+
+        /* --- Homepage Styles --- */
+        #home h1 {
+            color: #FFA500; /* Warm title color */
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        #home p {
+            text-align: center;
+            margin-bottom: 30px;
+            max-width: 300px;
+            line-height: 1.5;
+        }
+
+        .settings, .time-limits, .start-options {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 350px;
+            margin-bottom: 25px;
+        }
+
+        .slider-container {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .slider-container label {
+             display: block;
+             margin-bottom: 10px;
+             font-size: 1rem;
+        }
+
+        #phase-duration-slider {
+            width: 80%;
+            cursor: pointer;
+            accent-color: #FFBF00; /* Warm slider color */
+        }
+
+        #duration-value {
+            color: #FFA500;
+            font-weight: bold;
+        }
+
+        .preset-buttons button, #start-no-limit {
+            background-color: #444; /* Dark grey */
+            color: #E0E0E0;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 5px;
+            min-width: 120px;
+            transition: background-color 0.2s ease;
+        }
+
+        .preset-buttons button:hover, #start-no-limit:hover {
+            background-color: #555;
+        }
+
+        .preset-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+         
+         #start-no-limit {
+             background-color: #FFA500; /* Highlight main start */
+             color: #000;
+             font-weight: bold;
+         }
+         #start-no-limit:hover {
+             background-color: #FFBF00;
+         }
+
+
+        /* --- Exercise Page Styles --- */
+        #total-time-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 0.9rem;
+            color: #777; /* Less prominent */
+        }
+
+        #animation-container {
+            position: relative;
+            width: 200px; /* Adjust size as needed */
+            height: 200px;
+            margin-bottom: 30px;
+            display: flex; /* Use flex to easily center content if needed */
+            align-items: center;
+            justify-content: center;
+        }
+
+        #box-outline {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 2px solid #555; /* Subtle box outline */
+            border-radius: 5px; /* Slightly rounded corners */
+        }
+
+        #dot {
+            position: absolute;
+            width: 25px; /* Size of the moving dot */
+            height: 25px;
+            background-color: #FFA500; /* Warm color for the dot */
+            border-radius: 50%;
+            /* Start at bottom-left corner */
+            bottom: 0;
+            left: 0;
+            transform: translate(-50%, 50%); /* Center dot on corner */
+            transition: transform linear; /* Animation transition */
+        }
+
+        #phase-name {
+            font-size: 1.8rem;
+            color: #FFA500;
+            margin-bottom: 10px;
+            text-transform: capitalize;
+            min-height: 2.2rem; /* Prevent layout shift */
+        }
+
+        #phase-timer {
+            font-size: 3.5rem;
+            font-weight: bold;
+            color: #E0E0E0;
+             min-height: 4rem; /* Prevent layout shift */
+        }
+
+        #stop-button {
+            position: absolute;
+            bottom: 40px;
+            background: none;
+            border: 1px solid #777;
+            color: #AAA;
+            border-radius: 20px;
+            padding: 8px 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+         #stop-button:hover {
+            background-color: #333;
+            color: #FFF;
+         }
+
+    </style>
+</head>
+<body>
+
+    <div id="home" class="page">
+        <header>
+            <h1>Box Breathing</h1>
+            <p>Calm your mind and body. Follow the dot and prompts to regulate your breathing.</p>
+        </header>
+
+        <div class="settings">
+             <div class="slider-container">
+                <label for="phase-duration-slider">Phase Duration: <span id="duration-value">4</span> seconds</label>
+                <input type="range" id="phase-duration-slider" min="3" max="6" value="4">
+            </div>
+        </div>
+
+        <div class="time-limits">
+            <p>Optional Time Limit:</p>
+            <div class="preset-buttons">
+                <button data-duration="120">2 Min</button> <button data-duration="300">5 Min</button> <button data-duration="600">10 Min</button> </div>
+        </div>
+
+        <div class="start-options">
+            <button id="start-no-limit">Start</button>
+        </div>
+    </div>
+
+    <div id="exercise" class="page">
+        <div id="total-time-display">00:00</div>
+        <div id="animation-container">
+            <div id="box-outline"></div>
+            <div id="dot"></div>
+        </div>
+        <div id="phase-name">Starting...</div>
+        <div id="phase-timer"></div>
+        <button id="stop-button">Stop</button>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js') // Adjusted path for GitHub Pages root
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
